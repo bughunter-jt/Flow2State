@@ -1,6 +1,8 @@
-import { CodeGenerator, GenerateOptions } from "./code-generator";
-import { StateMachine } from "../ir/state-machine";
+import { Generator } from "../generator.decorator";
+import { CodeGenerator, GenerateOptions } from "../code-generator";
+import { StateMachine } from "../../ir/state-machine";
 
+@Generator("typescript")
 export class TypeScriptGenerator implements CodeGenerator<string> {
   language = "typescript";
 
