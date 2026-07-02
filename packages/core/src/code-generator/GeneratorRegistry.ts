@@ -24,3 +24,4 @@ export class GeneratorRegistry {
     return Array.from(this.generators.keys());
   }
 }
+export const registry = new GeneratorRegistry();
