@@ -1,6 +1,7 @@
 1. Product Overview
    1.1 Product Definition
-   A developer-focused workflow compiler that takes Mermaid DSL as input, transforms it into an Intermediate Representation (IR), and generates TypeScript state machine code along with a live diagram preview based on that IR.
+   A developer-focused workflow compiler that takes Mermaid DSL as input, transforms it into an Intermediate Representation (IR), and generates TypeScript state machine code
+    along with a live diagram preview based on that IR.
 
 1.2 Core Value (MVP)
 Define state machines "without code."
