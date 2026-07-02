@@ -1,0 +1,14 @@
+{
+  "name": "@workflow/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^2.0.5"
+  }
+}
