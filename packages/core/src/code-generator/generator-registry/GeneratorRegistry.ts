@@ -1,4 +1,4 @@
-import { CodeGenerator } from "./code-generator";
+import { CodeGenerator } from "../code-generator";
 
 export class GeneratorRegistry {
   private generators = new Map<string, CodeGenerator<any>>();
