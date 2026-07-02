@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "node"]
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", "dev.ts", "vitest.config.ts"]
 }
