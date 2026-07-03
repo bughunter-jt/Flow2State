@@ -23,7 +23,7 @@ describe("TypeScriptGenerator", () => {
     expect(normalize(result)).toContain('initial: "Login"');
   });
 
-  it("renders final targets as null transitions", () => {
+  it("renders final targets via an explicit sentinel constant", () => {
     const generator = new TypeScriptGenerator();
     const output = generator.generate({
       name: "Checkout",
@@ -36,6 +36,11 @@ describe("TypeScriptGenerator", () => {
       },
     });
 
-    expect(normalize(output)).toContain("confirm: null");
+    const normalized = normalize(output);
+
+    expect(normalized).toContain(
+      'export const FINAL_STATE = "__FINAL__" as const;',
+    );
+    expect(normalized).toContain("confirm: FINAL_STATE");
   });
 });

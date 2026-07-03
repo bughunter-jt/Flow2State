@@ -66,6 +66,8 @@ Description: Transpiles the IR into executable production-ready code.
 Output:
 
 TypeScript
+export const FINAL_STATE = "**FINAL**" as const;
+
 const machine = {
 initial: "Login",
 states: {
@@ -82,6 +84,7 @@ verified: "Success"
 }
 }
 };
+Final transitions must be emitted as `FINAL_STATE`, not `null`.
 Value: Instant code readiness, elimination of complex switch-case blocks, and reduction of state-related bugs.
 
 3.3 👁 Feature 3: Live Diagram Preview (Sync UI)
