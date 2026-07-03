@@ -1,19 +1,18 @@
-import {
-  finalTarget,
+import { finalTarget, stateTarget } from "../../ir/state-machine";
+import type {
   StateMachine,
   StateNode,
-  stateTarget,
   Transition,
 } from "../../ir/state-machine";
 import { parserRegistry } from "../ParserRegistry";
-import { Diagnostic } from "../diagnostic";
-import {
+import type { Diagnostic } from "../diagnostic";
+import type {
   IRResult,
   ParseResult,
   ParseToIROptions,
   SyntaxAdapter,
 } from "../syntax-adapter";
-import {
+import type {
   MermaidStateDeclarationAstNode,
   MermaidStateDiagramAst,
   MermaidTransitionAstNode,

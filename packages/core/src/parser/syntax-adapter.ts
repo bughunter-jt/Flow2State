@@ -1,5 +1,5 @@
-import { StateMachine } from "../ir/state-machine";
-import { Diagnostic } from "./diagnostic";
+import type { StateMachine } from "../ir/state-machine";
+import type { Diagnostic } from "./diagnostic";
 
 export interface ParseResult<TAst> {
   ast: TAst | null;

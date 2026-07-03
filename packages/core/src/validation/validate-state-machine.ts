@@ -1,5 +1,6 @@
-import { formatTarget, isFinalTarget, StateMachine } from "../ir/state-machine";
-import { Diagnostic } from "../parser/diagnostic";
+import { formatTarget, isFinalTarget } from "../ir/state-machine";
+import type { StateMachine } from "../ir/state-machine";
+import type { Diagnostic } from "../parser/diagnostic";
 
 export function validateStateMachine(machine: StateMachine): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];

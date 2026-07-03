@@ -1,5 +1,9 @@
-import { StateMachine } from "../ir/state-machine";
-import { IRResult, ParseToIROptions, SyntaxAdapter } from "./syntax-adapter";
+import type { StateMachine } from "../ir/state-machine";
+import type {
+  IRResult,
+  ParseToIROptions,
+  SyntaxAdapter,
+} from "./syntax-adapter";
 
 export class ParserRegistry {
   private readonly map = new Map<string, SyntaxAdapter<unknown>>();

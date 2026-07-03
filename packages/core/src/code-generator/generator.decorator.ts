@@ -1,5 +1,5 @@
 import { registry } from "./GeneratorRegistry";
-import { CodeGenerator } from "./code-generator";
+import type { CodeGenerator } from "./code-generator";
 
 type Constructor<T = any> = new (...args: any[]) => T;
 

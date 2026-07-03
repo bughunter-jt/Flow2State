@@ -1,12 +1,13 @@
 import { Generator } from "../generator.decorator";
-import { CodeGenerator, GenerateOptions } from "../code-generator";
-import { isFinalTarget, StateMachine } from "../../ir/state-machine";
+import type { CodeGenerator, GenerateOptions } from "../code-generator";
+import { isFinalTarget } from "../../ir/state-machine";
+import type { StateMachine } from "../../ir/state-machine";
 
 @Generator("typescript")
 export class TypeScriptGenerator implements CodeGenerator<string> {
   language = "typescript";
 
-  generate(machine: StateMachine, options?: GenerateOptions): string {
+  generate(machine: StateMachine, _options?: GenerateOptions): string {
     const usesFinalTarget = Object.values(machine.states).some((state) =>
       state.transitions.some((transition) => isFinalTarget(transition.target)),
     );

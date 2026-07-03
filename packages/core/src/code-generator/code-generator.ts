@@ -1,4 +1,4 @@
-import { StateMachine } from "../ir/state-machine";
+import type { StateMachine } from "../ir/state-machine";
 export interface GenerateOptions {
   indentSize?: number;
   strict?: boolean;
