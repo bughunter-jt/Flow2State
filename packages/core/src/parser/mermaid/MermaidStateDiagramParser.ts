@@ -22,8 +22,10 @@ import { validateStateMachine } from "../../validation/validate-state-machine";
 const INITIAL_MARKER = "[*]";
 const COMMENT_PREFIX = "%%";
 const HEADER_PATTERN = /^stateDiagram(?:-v2)?$/;
+const STATE_BLOCK_START_PATTERN = /^state\s+([A-Za-z_][\w-]*)\s*\{$/;
+const STATE_BLOCK_END_PATTERN = /^\}$/;
 const TRANSITION_PATTERN =
-  /^(\[\*\]|[A-Za-z_][\w-]*)\s*-->\s*(?:\|([^|]+)\|\s*)?(\[\*\]|[A-Za-z_][\w-]*)$/;
+  /^(\[\*\]|[A-Za-z_][\w.-]*)\s*-->\s*(?:\|([^|]+)\|\s*)?(\[\*\]|[A-Za-z_][\w.-]*)$/;
 
 export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiagramAst> {
   language = "mermaid";
@@ -32,6 +34,7 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
     const diagnostics: Diagnostic[] = [];
     const transitions: MermaidTransitionAstNode[] = [];
     const lines = source.split(/\r?\n/);
+    const scopeStack: string[] = [];
     let diagramType: MermaidStateDiagramAst["diagramType"] | null = null;
 
     for (const [index, rawLine] of lines.entries()) {
@@ -58,6 +61,28 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
         continue;
       }
 
+      const blockStart = trimmed.match(STATE_BLOCK_START_PATTERN);
+      if (blockStart) {
+        scopeStack.push(qualifyStateName(blockStart[1], scopeStack));
+        continue;
+      }
+
+      if (STATE_BLOCK_END_PATTERN.test(trimmed)) {
+        if (scopeStack.length === 0) {
+          diagnostics.push({
+            code: "parser/unmatched-block-end",
+            message:
+              "Found a closing state block without a matching opening block.",
+            severity: "error",
+            location: { line: lineNumber, column: 1 },
+          });
+          continue;
+        }
+
+        scopeStack.pop();
+        continue;
+      }
+
       const match = trimmed.match(TRANSITION_PATTERN);
       if (!match) {
         diagnostics.push({
@@ -72,11 +97,31 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
       }
 
       const [, from, event, to] = match;
+      if (from === INITIAL_MARKER && scopeStack.length > 0) {
+        diagnostics.push({
+          code: "parser/unsupported-scoped-initial",
+          message:
+            "Nested state blocks cannot define their own [*] initial transition in the current IR.",
+          severity: "error",
+          location: { line: lineNumber, column: 1 },
+        });
+        continue;
+      }
+
       transitions.push({
-        from,
-        to,
+        from: qualifyStateName(from, scopeStack),
+        to: qualifyStateName(to, scopeStack),
         event: event?.trim() || undefined,
         line: lineNumber,
+      });
+    }
+
+    if (scopeStack.length > 0) {
+      diagnostics.push({
+        code: "parser/unclosed-block",
+        message: "State block was opened but not closed.",
+        severity: "error",
+        location: { line: lines.length, column: 1 },
       });
     }
 
@@ -224,6 +269,16 @@ function toTransition(transition: MermaidTransitionAstNode): Transition {
         ? finalTarget()
         : stateTarget(transition.to),
   };
+}
+
+function qualifyStateName(stateName: string, scopeStack: string[]): string {
+  if (stateName === INITIAL_MARKER || stateName.includes(".")) {
+    return stateName;
+  }
+
+  return scopeStack.length > 0
+    ? `${scopeStack[scopeStack.length - 1]}.${stateName}`
+    : stateName;
 }
 
 parserRegistry.register("mermaid", new MermaidStateDiagramParser());

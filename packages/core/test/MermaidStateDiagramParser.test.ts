@@ -52,7 +52,7 @@ stateDiagram-v2
     const source = `
 stateDiagram-v2
   [*] --> Login
-  state Login {
+  note right of Login: unsupported
 `;
 
     const parser = new MermaidStateDiagramParser();
@@ -65,6 +65,63 @@ stateDiagram-v2
         "Only strict transition lines in the form A --> B or A -->|event| B are supported.",
       severity: "error",
       location: { line: 4, column: 1 },
+    });
+  });
+
+  it("flattens state blocks into qualified state names", () => {
+    const source = `
+stateDiagram-v2
+  [*] --> Checkout.Review
+  state Checkout {
+    Review -->|confirm| Confirmed
+    Confirmed -->|done| [*]
+  }
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "CheckoutFlow" });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.value).toEqual({
+      name: "CheckoutFlow",
+      initialState: "Checkout.Review",
+      states: {
+        "Checkout.Review": {
+          name: "Checkout.Review",
+          transitions: [
+            {
+              event: "confirm",
+              target: { kind: "state", stateName: "Checkout.Confirmed" },
+            },
+          ],
+        },
+        "Checkout.Confirmed": {
+          name: "Checkout.Confirmed",
+          transitions: [{ event: "done", target: { kind: "final" } }],
+        },
+      },
+    });
+  });
+
+  it("reports nested local initial transitions as unsupported", () => {
+    const source = `
+stateDiagram-v2
+  [*] --> Checkout.Review
+  state Checkout {
+    [*] --> Review
+  }
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "CheckoutFlow" });
+
+    expect(result.value).toBeNull();
+    expect(result.diagnostics).toContainEqual({
+      code: "parser/unsupported-scoped-initial",
+      message:
+        "Nested state blocks cannot define their own [*] initial transition in the current IR.",
+      severity: "error",
+      location: { line: 5, column: 1 },
     });
   });
 
