@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { CodePanel } from "./components/CodePanel";
 import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
 import { EditorPanel } from "./components/EditorPanel";
@@ -8,6 +9,7 @@ import { useCompiler } from "./hooks/useCompiler";
 import { useMermaidPreview } from "./hooks/useMermaidPreview";
 
 function App() {
+  const [showIr, setShowIr] = useState(false);
   const { source, setSource, result, isCompiling } = useCompiler();
   const { diagramSvg, diagramError, status } = useMermaidPreview(
     result,
@@ -37,21 +39,33 @@ function App() {
         />
         <DiagnosticsPanel diagnostics={result.diagnostics} />
         <CodePanel
-          className="panel-code"
+          className={`panel-code${showIr ? "" : " panel-code-wide"}`}
           kicker="Output"
           title="Generated TypeScript"
           content={result.generatedCode}
           fallback="// Valid output appears here after a successful parse."
-        />
-        <CodePanel
-          className="panel-ir"
-          kicker="Source Of Truth"
-          title="State machine IR"
-          content={
-            result.machine ? JSON.stringify(result.machine, null, 2) : ""
+          action={
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={() => setShowIr((previous) => !previous)}
+              aria-pressed={showIr}
+            >
+              {showIr ? "Hide IR" : "Show IR"}
+            </button>
           }
-          fallback={'{\n  "status": "awaiting-valid-machine"\n}'}
         />
+        {showIr ? (
+          <CodePanel
+            className="panel-ir"
+            kicker="Source Of Truth"
+            title="State machine IR"
+            content={
+              result.machine ? JSON.stringify(result.machine, null, 2) : ""
+            }
+            fallback={'{\n  "status": "awaiting-valid-machine"\n}'}
+          />
+        ) : null}
       </section>
     </main>
   );
