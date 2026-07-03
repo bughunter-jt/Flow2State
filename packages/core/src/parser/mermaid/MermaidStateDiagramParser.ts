@@ -11,6 +11,7 @@ import {
   MermaidStateDiagramAst,
   MermaidTransitionAstNode,
 } from "./mermaid-types";
+import { validateStateMachine } from "../../validation/validate-state-machine";
 
 const INITIAL_MARKER = "[*]";
 const COMMENT_PREFIX = "%%";
@@ -154,14 +155,20 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
     }
 
     const initialState = initialTransitions[0].to;
+    const machine: StateMachine = {
+      name: options?.machineName ?? "StateMachine",
+      initialState,
+      states: Object.fromEntries(states.entries()),
+    };
+    const validationDiagnostics = validateStateMachine(machine);
 
     return {
-      value: {
-        name: options?.machineName ?? "StateMachine",
-        initialState,
-        states: Object.fromEntries(states.entries()),
-      },
-      diagnostics,
+      value: validationDiagnostics.some(
+        (diagnostic) => diagnostic.severity === "error",
+      )
+        ? null
+        : machine,
+      diagnostics: [...diagnostics, ...validationDiagnostics],
     };
   }
 

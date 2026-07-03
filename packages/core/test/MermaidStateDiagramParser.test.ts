@@ -77,4 +77,24 @@ stateDiagram
     expect(result.value?.initialState).toBe("Idle");
     expect(result.value?.name).toBe("SimpleFlow");
   });
+
+  it("reports duplicate events through shared IR validation", () => {
+    const source = `
+stateDiagram-v2
+  [*] --> Login
+  Login -->|submit| MFA
+  Login -->|submit| Error
+  MFA -->|verified| Success
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "AuthFlow" });
+
+    expect(result.value).toBeNull();
+    expect(result.diagnostics).toContainEqual({
+      code: "validation/duplicate-event",
+      message: 'State "Login" has duplicate event "submit".',
+      severity: "error",
+    });
+  });
 });
