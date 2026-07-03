@@ -1,0 +1,30 @@
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import {
+  compileSource,
+  type MachineComputation,
+  initialSource,
+} from "../lib/compiler";
+
+export function useCompiler() {
+  const [source, setSource] = useState(initialSource);
+  const deferredSource = useDeferredValue(source);
+  const [result, setResult] = useState<MachineComputation>({
+    diagnostics: [],
+    machine: null,
+    generatedCode: "",
+  });
+
+  useEffect(() => {
+    const nextResult = compileSource(deferredSource);
+
+    startTransition(() => {
+      setResult(nextResult);
+    });
+  }, [deferredSource]);
+
+  return {
+    source,
+    setSource,
+    result,
+  };
+}
