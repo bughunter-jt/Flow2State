@@ -8,6 +8,7 @@ import {
 export function useCompiler() {
   const [source, setSource] = useState(initialSource);
   const deferredSource = useDeferredValue(source);
+  const isCompiling = source !== deferredSource;
   const [result, setResult] = useState<MachineComputation>(() =>
     compileSource(initialSource),
   );
@@ -24,5 +25,6 @@ export function useCompiler() {
     source,
     setSource,
     result,
+    isCompiling,
   };
 }

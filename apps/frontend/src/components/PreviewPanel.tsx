@@ -1,11 +1,22 @@
+import type { PreviewStatus } from "../hooks/useMermaidPreview";
 import { WorkspacePanel } from "./WorkspacePanel";
 
 type PreviewPanelProps = {
   diagramSvg: string;
   diagramError: string | null;
+  status: PreviewStatus;
 };
 
-export function PreviewPanel({ diagramSvg, diagramError }: PreviewPanelProps) {
+export function PreviewPanel({
+  diagramSvg,
+  diagramError,
+  status,
+}: PreviewPanelProps) {
+  const message =
+    status === "loading"
+      ? "Rendering preview from the latest IR..."
+      : (diagramError ?? "Preview will appear after a valid parse.");
+
   return (
     <WorkspacePanel
       className="panel-preview"
@@ -19,7 +30,7 @@ export function PreviewPanel({ diagramSvg, diagramError }: PreviewPanelProps) {
         />
       ) : (
         <div className="diagram-empty">
-          <p>{diagramError ?? "Preview will appear after a valid parse."}</p>
+          <p>{message}</p>
         </div>
       )}
     </WorkspacePanel>

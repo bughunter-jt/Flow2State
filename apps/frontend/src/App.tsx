@@ -8,8 +8,11 @@ import { useCompiler } from "./hooks/useCompiler";
 import { useMermaidPreview } from "./hooks/useMermaidPreview";
 
 function App() {
-  const { source, setSource, result } = useCompiler();
-  const { diagramSvg, diagramError } = useMermaidPreview(result);
+  const { source, setSource, result, isCompiling } = useCompiler();
+  const { diagramSvg, diagramError, status } = useMermaidPreview(
+    result,
+    isCompiling,
+  );
 
   const hasErrors = result.diagnostics.some(
     (diagnostic) => diagnostic.severity === "error",
@@ -27,7 +30,11 @@ function App() {
 
       <section className="workspace-grid">
         <EditorPanel source={source} onSourceChange={setSource} />
-        <PreviewPanel diagramSvg={diagramSvg} diagramError={diagramError} />
+        <PreviewPanel
+          diagramSvg={diagramSvg}
+          diagramError={diagramError}
+          status={status}
+        />
         <DiagnosticsPanel diagnostics={result.diagnostics} />
         <CodePanel
           className="panel-code"
