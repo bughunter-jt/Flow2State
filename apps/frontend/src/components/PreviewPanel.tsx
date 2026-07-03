@@ -12,6 +12,15 @@ export function PreviewPanel({
   diagramError,
   status,
 }: PreviewPanelProps) {
+  const statusLabel =
+    status === "ready"
+      ? "Preview ready"
+      : status === "loading"
+        ? "Rendering"
+        : status === "error"
+          ? "Needs attention"
+          : "Idle";
+
   const message =
     status === "loading"
       ? "Rendering preview from the latest IR..."
@@ -22,7 +31,16 @@ export function PreviewPanel({
       className="panel-preview"
       kicker="Preview"
       title="IR-driven live diagram"
+      action={
+        <span className={`status-pill status-${status}`}>{statusLabel}</span>
+      }
     >
+      <div className="panel-toolbar">
+        <p className="panel-note">
+          The SVG is rendered from validated IR, not directly from the source
+          text.
+        </p>
+      </div>
       {diagramSvg ? (
         <div
           className="diagram-surface"

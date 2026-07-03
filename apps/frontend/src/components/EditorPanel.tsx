@@ -7,6 +7,9 @@ type EditorPanelProps = {
 };
 
 export function EditorPanel({ source, onSourceChange }: EditorPanelProps) {
+  const lineCount = source.split(/\r?\n/).length;
+  const charCount = source.length;
+
   return (
     <WorkspacePanel
       className="panel-editor"
@@ -22,6 +25,16 @@ export function EditorPanel({ source, onSourceChange }: EditorPanelProps) {
         </button>
       }
     >
+      <div className="panel-toolbar">
+        <p className="panel-note">
+          Author a compact Mermaid subset, then inspect the compiler output in
+          real time.
+        </p>
+        <div className="panel-metrics" aria-label="Editor stats">
+          <span>{lineCount} lines</span>
+          <span>{charCount} chars</span>
+        </div>
+      </div>
       <textarea
         className="editor"
         spellCheck={false}

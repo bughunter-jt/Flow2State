@@ -1,12 +1,12 @@
 .app-shell {
   display: grid;
-  gap: 24px;
+  gap: 20px;
 }
 
 .hero-band {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr);
+  gap: 12px;
   align-items: stretch;
 }
 
@@ -20,7 +20,7 @@
 }
 
 .hero-copy {
-  padding: 28px;
+  padding: 18px 20px;
   background:
     radial-gradient(
       circle at top left,
@@ -36,16 +36,17 @@
 
 .eyebrow,
 .panel-kicker {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-size: 0.77rem;
+  font-size: 0.72rem;
   color: var(--accent-strong);
 }
 
-.hero-text {
-  max-width: 64ch;
-  color: var(--text-soft);
+.hero-copy h1 {
+  font-size: clamp(1.25rem, 2.1vw, 1.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .hero-stats {
@@ -57,7 +58,7 @@
 }
 
 .hero-stats article {
-  padding: 24px 18px;
+  padding: 14px 14px;
   background: linear-gradient(
     180deg,
     rgba(255, 251, 244, 0.92),
@@ -76,17 +77,18 @@
 
 .hero-stats strong {
   font-family: var(--heading);
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-size: clamp(1.2rem, 2.1vw, 1.7rem);
   color: var(--text-strong);
 }
 
 .workspace-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: start;
+  grid-template-columns: minmax(0, 1.16fr) minmax(320px, 0.84fr);
   grid-template-areas:
     "editor preview"
-    "editor diagnostics"
+    "diagnostics diagnostics"
     "code ir";
 }
 
@@ -103,6 +105,9 @@
 
 .panel-preview {
   grid-area: preview;
+  position: sticky;
+  top: 20px;
+  align-self: start;
 }
 
 .panel-diagnostics {
@@ -126,6 +131,69 @@
 
 .panel-header h2 {
   margin: 0;
+}
+
+.panel-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 252, 246, 0.74);
+}
+
+.panel-note {
+  max-width: 44ch;
+  color: var(--text-soft);
+  font-size: 0.93rem;
+}
+
+.panel-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.panel-metrics span,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-strong);
+  font-size: 0.84rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.status-ready,
+.status-summary {
+  border-color: rgba(29, 95, 67, 0.2);
+  background: rgba(29, 95, 67, 0.08);
+  color: #1d5f43;
+}
+
+.status-loading {
+  border-color: rgba(188, 108, 37, 0.25);
+  background: rgba(188, 108, 37, 0.1);
+  color: var(--accent-strong);
+}
+
+.status-error {
+  border-color: rgba(195, 62, 62, 0.22);
+  background: rgba(195, 62, 62, 0.08);
+  color: #8d2f2f;
+}
+
+.status-idle {
+  color: var(--text-soft);
 }
 
 .ghost-button {
@@ -158,7 +226,7 @@
 }
 
 .editor {
-  min-height: 680px;
+  min-height: 620px;
   resize: vertical;
   width: 100%;
   box-sizing: border-box;
@@ -185,9 +253,14 @@
 }
 
 .diagram-surface {
-  min-height: 320px;
+  min-height: 620px;
+  max-height: 620px;
   overflow: auto;
   padding: 18px;
+}
+
+.diagram-empty {
+  min-height: 620px;
 }
 
 .diagram-surface svg {
@@ -249,14 +322,14 @@
   margin: 0;
   overflow: auto;
   padding: 16px;
-  min-height: 240px;
+  min-height: 260px;
   white-space: pre-wrap;
   word-break: break-word;
   font: 0.92rem/1.65 var(--mono);
   color: var(--text-strong);
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 980px) {
   .hero-band,
   .workspace-grid {
     grid-template-columns: 1fr;
@@ -269,6 +342,10 @@
       "diagnostics"
       "code"
       "ir";
+  }
+
+  .panel-preview {
+    position: static;
   }
 
   .hero-stats {
@@ -293,5 +370,13 @@
 
   .panel-header {
     flex-direction: column;
+  }
+
+  .panel-toolbar {
+    flex-direction: column;
+  }
+
+  .panel-metrics {
+    justify-content: flex-start;
   }
 }
