@@ -3,6 +3,7 @@ export interface MermaidTransitionAstNode {
   to: string;
   event?: string;
   line: number;
+  scope: string[];
 }
 
 export interface MermaidStateDiagramAst {

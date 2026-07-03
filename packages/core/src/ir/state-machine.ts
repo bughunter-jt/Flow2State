@@ -19,6 +19,8 @@ export interface Transition {
 
 export interface StateNode {
   name: string;
+  parentState?: string;
+  initialState?: string;
 
   transitions: Transition[];
 }

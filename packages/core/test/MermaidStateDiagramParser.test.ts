@@ -86,8 +86,13 @@ stateDiagram-v2
       name: "CheckoutFlow",
       initialState: "Checkout.Review",
       states: {
+        Checkout: {
+          name: "Checkout",
+          transitions: [],
+        },
         "Checkout.Review": {
           name: "Checkout.Review",
+          parentState: "Checkout",
           transitions: [
             {
               event: "confirm",
@@ -97,32 +102,36 @@ stateDiagram-v2
         },
         "Checkout.Confirmed": {
           name: "Checkout.Confirmed",
+          parentState: "Checkout",
           transitions: [{ event: "done", target: { kind: "final" } }],
         },
       },
     });
   });
 
-  it("reports nested local initial transitions as unsupported", () => {
+  it("maps nested local initial transitions onto container state metadata", () => {
     const source = `
 stateDiagram-v2
-  [*] --> Checkout.Review
+  [*] --> Checkout
   state Checkout {
     [*] --> Review
+    Review -->|confirm| Confirmed
   }
 `;
 
     const parser = new MermaidStateDiagramParser();
     const result = parser.parseToIR(source, { machineName: "CheckoutFlow" });
 
-    expect(result.value).toBeNull();
-    expect(result.diagnostics).toContainEqual({
-      code: "parser/unsupported-scoped-initial",
-      message:
-        "Nested state blocks cannot define their own [*] initial transition in the current IR.",
-      severity: "error",
-      location: { line: 5, column: 1 },
+    expect(result.diagnostics).toEqual([]);
+    expect(result.value?.initialState).toBe("Checkout");
+    expect(result.value?.states.Checkout).toEqual({
+      name: "Checkout",
+      initialState: "Checkout.Review",
+      transitions: [],
     });
+    expect(result.value?.states["Checkout.Review"].parentState).toBe(
+      "Checkout",
+    );
   });
 
   it("registers itself in the parser registry", () => {

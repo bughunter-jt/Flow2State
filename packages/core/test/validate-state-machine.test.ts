@@ -81,4 +81,25 @@ describe("validateStateMachine", () => {
 
     expect(validateStateMachine(machine)).toEqual([]);
   });
+
+  it("accepts nested container states with a direct child initial state", () => {
+    const machine: StateMachine = {
+      name: "CheckoutFlow",
+      initialState: "Checkout",
+      states: {
+        Checkout: {
+          name: "Checkout",
+          initialState: "Checkout.Review",
+          transitions: [],
+        },
+        "Checkout.Review": {
+          name: "Checkout.Review",
+          parentState: "Checkout",
+          transitions: [{ event: "confirm", target: finalTarget() }],
+        },
+      },
+    };
+
+    expect(validateStateMachine(machine)).toEqual([]);
+  });
 });

@@ -28,6 +28,31 @@ export function validateStateMachine(machine: StateMachine): Diagnostic[] {
       });
     }
 
+    if (state.parentState && !machine.states[state.parentState]) {
+      diagnostics.push({
+        code: "validation/unknown-parent-state",
+        message: `State "${stateKey}" declares unknown parent state "${state.parentState}".`,
+        severity: "error",
+      });
+    }
+
+    if (state.initialState) {
+      const nestedInitial = machine.states[state.initialState];
+      if (!nestedInitial) {
+        diagnostics.push({
+          code: "validation/unknown-nested-initial-state",
+          message: `State "${stateKey}" declares unknown nested initial state "${state.initialState}".`,
+          severity: "error",
+        });
+      } else if (nestedInitial.parentState !== stateKey) {
+        diagnostics.push({
+          code: "validation/invalid-nested-initial-state",
+          message: `State "${stateKey}" must point its nested initial state to a direct child, but received "${state.initialState}".`,
+          severity: "error",
+        });
+      }
+    }
+
     const seenEvents = new Set<string>();
     for (const transition of state.transitions) {
       if (

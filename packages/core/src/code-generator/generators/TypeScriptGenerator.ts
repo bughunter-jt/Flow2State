@@ -13,6 +13,9 @@ export class TypeScriptGenerator implements CodeGenerator<string> {
 
     const states = Object.entries(machine.states)
       .map(([stateName, state]) => {
+        const nestedInitialLine = state.initialState
+          ? `      initial: "${state.initialState}",\n`
+          : "";
         const transitions = state.transitions
           .map((t) =>
             isFinalTarget(t.target)
@@ -23,7 +26,7 @@ export class TypeScriptGenerator implements CodeGenerator<string> {
 
         return `
     ${stateName}: {
-      on: {
+${nestedInitialLine}      on: {
 ${transitions}
       }
     }`;

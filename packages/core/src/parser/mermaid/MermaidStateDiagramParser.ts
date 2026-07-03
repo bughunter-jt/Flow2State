@@ -97,22 +97,13 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
       }
 
       const [, from, event, to] = match;
-      if (from === INITIAL_MARKER && scopeStack.length > 0) {
-        diagnostics.push({
-          code: "parser/unsupported-scoped-initial",
-          message:
-            "Nested state blocks cannot define their own [*] initial transition in the current IR.",
-          severity: "error",
-          location: { line: lineNumber, column: 1 },
-        });
-        continue;
-      }
 
       transitions.push({
         from: qualifyStateName(from, scopeStack),
         to: qualifyStateName(to, scopeStack),
         event: event?.trim() || undefined,
         line: lineNumber,
+        scope: [...scopeStack],
       });
     }
 
@@ -155,7 +146,12 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
     const diagnostics: Diagnostic[] = [];
     const states = new Map<string, StateNode>();
     const initialTransitions = ast.transitions.filter(
-      (transition) => transition.from === INITIAL_MARKER,
+      (transition) =>
+        transition.from === INITIAL_MARKER && transition.scope.length === 0,
+    );
+    const scopedInitialTransitions = ast.transitions.filter(
+      (transition) =>
+        transition.from === INITIAL_MARKER && transition.scope.length > 0,
     );
 
     if (initialTransitions.length === 0) {
@@ -188,7 +184,45 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
       });
     }
 
+    for (const transition of scopedInitialTransitions) {
+      if (transition.to === INITIAL_MARKER) {
+        diagnostics.push({
+          code: "parser/invalid-scoped-initial-target",
+          message:
+            "A nested initial transition must target a concrete child state.",
+          severity: "error",
+          location: { line: transition.line, column: 1 },
+        });
+      }
+    }
+
+    const scopedInitialByContainer = new Map<
+      string,
+      MermaidTransitionAstNode
+    >();
+    for (const transition of scopedInitialTransitions) {
+      const containerState = transition.scope[transition.scope.length - 1];
+      const existing = scopedInitialByContainer.get(containerState);
+      if (existing) {
+        diagnostics.push({
+          code: "parser/multiple-scoped-initial",
+          message: `State "${containerState}" defines more than one nested initial transition.`,
+          severity: "error",
+          location: { line: transition.line, column: 1 },
+        });
+        continue;
+      }
+
+      scopedInitialByContainer.set(containerState, transition);
+    }
+
     for (const transition of ast.transitions) {
+      if (transition.scope.length > 0) {
+        for (const scopedStateName of transition.scope) {
+          ensureState(states, scopedStateName);
+        }
+      }
+
       if (transition.to !== INITIAL_MARKER) {
         ensureState(states, transition.to);
       }
@@ -204,6 +238,10 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
 
     if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
       return { value: null, diagnostics };
+    }
+
+    for (const [containerState, transition] of scopedInitialByContainer) {
+      ensureState(states, containerState).initialState = transition.to;
     }
 
     const initialState = initialTransitions[0].to;
@@ -253,8 +291,11 @@ function ensureState(
     return existing;
   }
 
+  const parentState = getParentStateName(stateName);
+
   const created: StateNode = {
     name: stateName,
+    parentState,
     transitions: [],
   };
   states.set(stateName, created);
@@ -279,6 +320,15 @@ function qualifyStateName(stateName: string, scopeStack: string[]): string {
   return scopeStack.length > 0
     ? `${scopeStack[scopeStack.length - 1]}.${stateName}`
     : stateName;
+}
+
+function getParentStateName(stateName: string): string | undefined {
+  const separatorIndex = stateName.lastIndexOf(".");
+  if (separatorIndex === -1) {
+    return undefined;
+  }
+
+  return stateName.slice(0, separatorIndex);
 }
 
 parserRegistry.register("mermaid", new MermaidStateDiagramParser());

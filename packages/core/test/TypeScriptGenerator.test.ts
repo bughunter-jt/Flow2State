@@ -43,4 +43,30 @@ describe("TypeScriptGenerator", () => {
     );
     expect(normalized).toContain("confirm: FINAL_STATE");
   });
+
+  it("renders nested state initial metadata for container states", () => {
+    const generator = new TypeScriptGenerator();
+    const output = generator.generate({
+      name: "Checkout",
+      initialState: "Checkout",
+      states: {
+        Checkout: {
+          name: "Checkout",
+          initialState: "Checkout.Review",
+          transitions: [],
+        },
+        "Checkout.Review": {
+          name: "Checkout.Review",
+          parentState: "Checkout",
+          transitions: [],
+        },
+      },
+    });
+
+    const normalized = normalize(output);
+
+    expect(normalized).toContain(
+      'Checkout: { initial: "Checkout.Review", on: { } }',
+    );
+  });
 });
