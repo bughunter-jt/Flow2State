@@ -14,6 +14,7 @@ import {
   SyntaxAdapter,
 } from "../syntax-adapter";
 import {
+  MermaidStateDeclarationAstNode,
   MermaidStateDiagramAst,
   MermaidTransitionAstNode,
 } from "./mermaid-types";
@@ -23,18 +24,22 @@ const INITIAL_MARKER = "[*]";
 const COMMENT_PREFIX = "%%";
 const HEADER_PATTERN = /^stateDiagram(?:-v2)?$/;
 const STATE_BLOCK_START_PATTERN = /^state\s+([A-Za-z_][\w-]*)\s*\{$/;
+const STATE_ALIAS_PATTERN =
+  /^state\s+("(?:[^"\\]|\\.)+"|[A-Za-z_][\w.-]*)\s+as\s+([A-Za-z_][\w-]*)$/;
+const STATE_ALIAS_BLOCK_START_PATTERN =
+  /^state\s+("(?:[^"\\]|\\.)+"|[A-Za-z_][\w.-]*)\s+as\s+([A-Za-z_][\w-]*)\s*\{$/;
 const STATE_BLOCK_END_PATTERN = /^\}$/;
-const TRANSITION_PATTERN =
-  /^(\[\*\]|[A-Za-z_][\w.-]*)\s*-->\s*(?:\|([^|]+)\|\s*)?(\[\*\]|[A-Za-z_][\w.-]*)$/;
 
 export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiagramAst> {
   language = "mermaid";
 
   parse(source: string): ParseResult<MermaidStateDiagramAst> {
     const diagnostics: Diagnostic[] = [];
+    const declarations: MermaidStateDeclarationAstNode[] = [];
     const transitions: MermaidTransitionAstNode[] = [];
     const lines = source.split(/\r?\n/);
     const scopeStack: string[] = [];
+    const labelAliases = new Map<string, string>();
     let diagramType: MermaidStateDiagramAst["diagramType"] | null = null;
 
     for (const [index, rawLine] of lines.entries()) {
@@ -61,9 +66,50 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
         continue;
       }
 
+      const aliasBlockStart = trimmed.match(STATE_ALIAS_BLOCK_START_PATTERN);
+      if (aliasBlockStart) {
+        const canonicalName = qualifyStateName(aliasBlockStart[2], scopeStack);
+        registerLabelAlias(
+          labelAliases,
+          aliasBlockStart[1],
+          canonicalName,
+          scopeStack,
+        );
+        declarations.push({
+          name: canonicalName,
+          line: lineNumber,
+          scope: [...scopeStack],
+        });
+        scopeStack.push(canonicalName);
+        continue;
+      }
+
+      const aliasDeclaration = trimmed.match(STATE_ALIAS_PATTERN);
+      if (aliasDeclaration) {
+        const canonicalName = qualifyStateName(aliasDeclaration[2], scopeStack);
+        registerLabelAlias(
+          labelAliases,
+          aliasDeclaration[1],
+          canonicalName,
+          scopeStack,
+        );
+        declarations.push({
+          name: canonicalName,
+          line: lineNumber,
+          scope: [...scopeStack],
+        });
+        continue;
+      }
+
       const blockStart = trimmed.match(STATE_BLOCK_START_PATTERN);
       if (blockStart) {
-        scopeStack.push(qualifyStateName(blockStart[1], scopeStack));
+        const canonicalName = qualifyStateName(blockStart[1], scopeStack);
+        declarations.push({
+          name: canonicalName,
+          line: lineNumber,
+          scope: [...scopeStack],
+        });
+        scopeStack.push(canonicalName);
         continue;
       }
 
@@ -83,8 +129,8 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
         continue;
       }
 
-      const match = trimmed.match(TRANSITION_PATTERN);
-      if (!match) {
+      const parsedTransition = parseTransitionLine(trimmed);
+      if (!parsedTransition) {
         diagnostics.push({
           code: "parser/unsupported-line",
           message:
@@ -96,11 +142,28 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
         continue;
       }
 
-      const [, from, event, to] = match;
+      const { from, event, to } = parsedTransition;
+      const resolvedFrom = resolveStateReference(
+        from,
+        scopeStack,
+        labelAliases,
+      );
+      const resolvedTo = resolveStateReference(to, scopeStack, labelAliases);
+
+      if (!resolvedFrom || !resolvedTo) {
+        diagnostics.push({
+          code: "parser/unresolved-state-reference",
+          message:
+            "Quoted state references must be declared with a Mermaid alias before use.",
+          severity: "error",
+          location: { line: lineNumber, column: 1 },
+        });
+        continue;
+      }
 
       transitions.push({
-        from: qualifyStateName(from, scopeStack),
-        to: qualifyStateName(to, scopeStack),
+        from: resolvedFrom,
+        to: resolvedTo,
         event: event?.trim() || undefined,
         line: lineNumber,
         scope: [...scopeStack],
@@ -133,6 +196,7 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
           ? null
           : {
               diagramType,
+              declarations,
               transitions,
             },
       diagnostics,
@@ -214,6 +278,10 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
       }
 
       scopedInitialByContainer.set(containerState, transition);
+    }
+
+    for (const declaration of ast.declarations) {
+      ensureState(states, declaration.name);
     }
 
     for (const transition of ast.transitions) {
@@ -329,6 +397,114 @@ function getParentStateName(stateName: string): string | undefined {
   }
 
   return stateName.slice(0, separatorIndex);
+}
+
+function parseTransitionLine(
+  line: string,
+): { from: string; event?: string; to: string } | null {
+  const arrowIndex = line.indexOf("-->");
+  if (arrowIndex === -1) {
+    return null;
+  }
+
+  const from = line.slice(0, arrowIndex).trim();
+  let remainder = line.slice(arrowIndex + 3).trim();
+  let event: string | undefined;
+
+  if (remainder.startsWith("|")) {
+    const eventEnd = remainder.indexOf("|", 1);
+    if (eventEnd === -1) {
+      return null;
+    }
+
+    event = remainder.slice(1, eventEnd).trim();
+    remainder = remainder.slice(eventEnd + 1).trim();
+  }
+
+  if (
+    !isSupportedStateTokenSyntax(from) ||
+    !isSupportedStateTokenSyntax(remainder)
+  ) {
+    return null;
+  }
+
+  return {
+    from,
+    event,
+    to: remainder,
+  };
+}
+
+function isSupportedStateTokenSyntax(token: string): boolean {
+  return (
+    token === INITIAL_MARKER ||
+    isQuotedStateToken(token) ||
+    /^[A-Za-z_][\w.-]*$/.test(token)
+  );
+}
+
+function resolveStateReference(
+  token: string,
+  scopeStack: string[],
+  labelAliases: Map<string, string>,
+): string | null {
+  if (token === INITIAL_MARKER) {
+    return token;
+  }
+
+  if (isQuotedStateToken(token)) {
+    return lookupLabelAlias(labelAliases, unquoteStateToken(token), scopeStack);
+  }
+
+  if (/^[A-Za-z_][\w.-]*$/.test(token)) {
+    return qualifyStateName(token, scopeStack);
+  }
+
+  return null;
+}
+
+function registerLabelAlias(
+  labelAliases: Map<string, string>,
+  token: string,
+  canonicalName: string,
+  scopeStack: string[],
+) {
+  if (!isQuotedStateToken(token)) {
+    return;
+  }
+
+  labelAliases.set(
+    makeScopedLabelKey(unquoteStateToken(token), scopeStack),
+    canonicalName,
+  );
+}
+
+function lookupLabelAlias(
+  labelAliases: Map<string, string>,
+  label: string,
+  scopeStack: string[],
+): string | null {
+  for (let index = scopeStack.length; index >= 0; index -= 1) {
+    const scopedKey = makeScopedLabelKey(label, scopeStack.slice(0, index));
+    const resolved = labelAliases.get(scopedKey);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+}
+
+function makeScopedLabelKey(label: string, scopeStack: string[]): string {
+  return `${scopeStack.join(">")}:${label}`;
+}
+
+function isQuotedStateToken(token: string): boolean {
+  return /^"(?:[^"\\]|\\.)+"$/.test(token);
+}
+
+function unquoteStateToken(token: string): string {
+  return token.slice(1, -1);
 }
 
 parserRegistry.register("mermaid", new MermaidStateDiagramParser());

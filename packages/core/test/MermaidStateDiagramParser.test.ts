@@ -134,6 +134,58 @@ stateDiagram-v2
     );
   });
 
+  it("supports Mermaid aliases and quoted state references", () => {
+    const source = `
+stateDiagram-v2
+  state "Waiting for Review" as WaitingForReview
+  [*] --> "Waiting for Review"
+  "Waiting for Review" -->|approve| Approved
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "ReviewFlow" });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.value).toEqual({
+      name: "ReviewFlow",
+      initialState: "WaitingForReview",
+      states: {
+        WaitingForReview: {
+          name: "WaitingForReview",
+          transitions: [
+            {
+              event: "approve",
+              target: { kind: "state", stateName: "Approved" },
+            },
+          ],
+        },
+        Approved: {
+          name: "Approved",
+          transitions: [],
+        },
+      },
+    });
+  });
+
+  it("reports unresolved quoted state references", () => {
+    const source = `
+stateDiagram-v2
+  [*] --> "Waiting for Review"
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "ReviewFlow" });
+
+    expect(result.value).toBeNull();
+    expect(result.diagnostics).toContainEqual({
+      code: "parser/unresolved-state-reference",
+      message:
+        "Quoted state references must be declared with a Mermaid alias before use.",
+      severity: "error",
+      location: { line: 3, column: 1 },
+    });
+  });
+
   it("registers itself in the parser registry", () => {
     const result = parserRegistry.parseToIR(
       "mermaid",

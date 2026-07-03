@@ -39,6 +39,25 @@ Output: Derived products
    3.1 🔥 Feature 1: Mermaid → IR Transformation Engine
    Description: Converts Mermaid DSL into a structured State Machine IR.
 
+Current Mermaid subset for the MVP:
+
+- Required header: `stateDiagram` or `stateDiagram-v2`
+- Transition forms: `A --> B`, `A -->|event| B`, `A --> [*]`, `A -->|event| [*]`
+- Initial transitions: one top-level `[*] --> State` is required
+- State blocks: `state Parent { ... }`
+- Nested local initial transitions inside blocks: `state Parent { [*] --> Child }`
+- Alias declarations: `state "Human Label" as InternalName`
+- Quoted references: `"Human Label" -->|event| OtherState` after alias declaration
+- Comments: lines starting with `%%`
+
+Current Mermaid subset limitations for the MVP:
+
+- The compiler accepts a strict subset of Mermaid state syntax, not the full Mermaid grammar.
+- Quoted state references must be declared through `state "Label" as Alias` before use.
+- Nested states are flattened into qualified IR names such as `Checkout.Review`.
+- A nested local initial transition is represented on the parent state as `initialState` metadata.
+- Unsupported Mermaid constructs must fail deterministically with parser diagnostics.
+
 Data Structure:
 
 JSON
@@ -46,12 +65,14 @@ JSON
 "initial": "Login",
 "states": {
 "Login": {
+"name": "Login",
 "on": {
 "success": "MFA",
 "fail": "Error"
 }
 },
 "MFA": {
+"name": "MFA",
 "on": {
 "verified": "Success"
 }
@@ -85,6 +106,24 @@ verified: "Success"
 }
 };
 Final transitions must be emitted as `FINAL_STATE`, not `null`.
+
+Nested container states must preserve their local initial state in generated output:
+
+TypeScript
+const nestedMachine = {
+initial: "Checkout",
+states: {
+Checkout: {
+initial: "Checkout.Review",
+on: {}
+},
+"Checkout.Review": {
+on: {
+confirm: "Checkout.Confirmed"
+}
+}
+}
+};
 Value: Instant code readiness, elimination of complex switch-case blocks, and reduction of state-related bugs.
 
 3.3 👁 Feature 3: Live Diagram Preview (Sync UI)
@@ -107,7 +146,10 @@ Characteristics: 100~300ms debounce, instant feedback, IR-based synchronization.
    type Machine = {
    initial: string;
    states: Record<string, {
-   on?: Record<string, string>;
+   name: string;
+   parentState?: string;
+   initialState?: string;
+   on?: Record<string, string | typeof FINAL_STATE>;
    }>;
    };
    IR Role
