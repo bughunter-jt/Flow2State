@@ -8,6 +8,7 @@ type CodePanelProps = {
   content: string;
   fallback: string;
   action?: ReactNode;
+  contentClassName?: string;
 };
 
 export function CodePanel({
@@ -17,6 +18,7 @@ export function CodePanel({
   content,
   fallback,
   action,
+  contentClassName,
 }: CodePanelProps) {
   return (
     <WorkspacePanel
@@ -25,7 +27,11 @@ export function CodePanel({
       title={title}
       action={action}
     >
-      <pre className="code-block">{content || fallback}</pre>
+      <pre
+        className={`m-0 min-h-[260px] overflow-auto whitespace-pre-wrap break-words rounded-[18px] border border-stone-700/10 bg-[var(--surface-muted)] p-4 text-stone-900 [font:0.92rem/1.65_var(--mono)] ${contentClassName ?? ""}`}
+      >
+        {content || fallback}
+      </pre>
     </WorkspacePanel>
   );
 }

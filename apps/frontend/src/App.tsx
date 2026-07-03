@@ -4,7 +4,6 @@ import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
 import { EditorPanel } from "./components/EditorPanel";
 import { HeroSection } from "./components/HeroSection";
 import { PreviewPanel } from "./components/PreviewPanel";
-import "./App.css";
 import { useCompiler } from "./hooks/useCompiler";
 import { useMermaidPreview } from "./hooks/useMermaidPreview";
 
@@ -21,7 +20,7 @@ function App() {
   );
 
   return (
-    <main className="app-shell">
+    <main className="app-shell grid gap-5">
       <HeroSection
         hasErrors={hasErrors}
         stateCount={
@@ -30,7 +29,7 @@ function App() {
         diagnosticCount={result.diagnostics.length}
       />
 
-      <section className="workspace-grid">
+      <section className="workspace-grid grid items-start gap-[18px] min-[981px]:grid-cols-[minmax(0,1.16fr)_minmax(320px,0.84fr)]">
         <EditorPanel source={source} onSourceChange={setSource} />
         <PreviewPanel
           diagramSvg={diagramSvg}
@@ -39,15 +38,16 @@ function App() {
         />
         <DiagnosticsPanel diagnostics={result.diagnostics} />
         <CodePanel
-          className={`panel-code${showIr ? "" : " panel-code-wide"}`}
+          className={`panel-code${showIr ? "" : " min-[981px]:col-span-2"}`}
           kicker="Output"
           title="Generated TypeScript"
           content={result.generatedCode}
           fallback="// Valid output appears here after a successful parse."
+          contentClassName="ring-1 ring-amber-700/10 bg-gradient-to-b from-amber-50/80 to-amber-100/40 shadow-inner"
           action={
             <button
               type="button"
-              className="ghost-button"
+              className="cursor-pointer rounded-full border border-amber-700/35 bg-amber-700/10 px-3.5 py-2.5 text-stone-900 shadow-sm transition [font:inherit] hover:-translate-y-0.5 hover:border-amber-700 hover:bg-amber-700/15"
               onClick={() => setShowIr((previous) => !previous)}
               aria-pressed={showIr}
             >

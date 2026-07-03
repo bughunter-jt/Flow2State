@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --page-bg: #f8f2e7;
   --panel-bg: rgba(255, 250, 242, 0.88);
