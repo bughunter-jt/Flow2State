@@ -1,9 +1,8 @@
-import { Generator } from "../generator.decorator";
 import type { CodeGenerator, GenerateOptions } from "../code-generator";
+import { registry } from "../GeneratorRegistry";
 import { isFinalTarget } from "../../ir/state-machine";
 import type { StateMachine } from "../../ir/state-machine";
 
-@Generator("typescript")
 export class TypeScriptGenerator implements CodeGenerator<string> {
   language = "typescript";
 
@@ -43,3 +42,5 @@ ${usesFinalTarget ? 'export const FINAL_STATE = "__FINAL__" as const;\n' : ""}ex
 `;
   }
 }
+
+registry.register("typescript", new TypeScriptGenerator());

@@ -18,7 +18,7 @@ describe("TypeScriptGenerator", () => {
     expect(normalized).toContain('verified: "Success"');
   });
 
-  it("registers itself via decorator", () => {
+  it("registers itself via module side effect", () => {
     const result = registry.generate("typescript", authMachine);
     expect(normalize(result)).toContain('initial: "Login"');
   });

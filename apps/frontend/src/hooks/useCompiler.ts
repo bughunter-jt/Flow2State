@@ -8,11 +8,9 @@ import {
 export function useCompiler() {
   const [source, setSource] = useState(initialSource);
   const deferredSource = useDeferredValue(source);
-  const [result, setResult] = useState<MachineComputation>({
-    diagnostics: [],
-    machine: null,
-    generatedCode: "",
-  });
+  const [result, setResult] = useState<MachineComputation>(() =>
+    compileSource(initialSource),
+  );
 
   useEffect(() => {
     const nextResult = compileSource(deferredSource);
