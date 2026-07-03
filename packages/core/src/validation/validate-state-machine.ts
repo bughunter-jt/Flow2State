@@ -1,4 +1,4 @@
-import { StateMachine } from "../ir/state-machine";
+import { formatTarget, isFinalTarget, StateMachine } from "../ir/state-machine";
 import { Diagnostic } from "../parser/diagnostic";
 
 export function validateStateMachine(machine: StateMachine): Diagnostic[] {
@@ -30,10 +30,13 @@ export function validateStateMachine(machine: StateMachine): Diagnostic[] {
 
     const seenEvents = new Set<string>();
     for (const transition of state.transitions) {
-      if (!machine.states[transition.target]) {
+      if (
+        !isFinalTarget(transition.target) &&
+        !machine.states[transition.target.stateName]
+      ) {
         diagnostics.push({
           code: "validation/unknown-transition-target",
-          message: `Transition from \"${stateKey}\" points to undefined state \"${transition.target}\".`,
+          message: `Transition from \"${stateKey}\" points to undefined state \"${formatTarget(transition.target)}\".`,
           severity: "error",
         });
       }

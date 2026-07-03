@@ -23,13 +23,18 @@ stateDiagram-v2
         Login: {
           name: "Login",
           transitions: [
-            { event: "success", target: "MFA" },
-            { event: "fail", target: "Error" },
+            { event: "success", target: { kind: "state", stateName: "MFA" } },
+            { event: "fail", target: { kind: "state", stateName: "Error" } },
           ],
         },
         MFA: {
           name: "MFA",
-          transitions: [{ event: "verified", target: "Success" }],
+          transitions: [
+            {
+              event: "verified",
+              target: { kind: "state", stateName: "Success" },
+            },
+          ],
         },
         Error: {
           name: "Error",
@@ -76,6 +81,22 @@ stateDiagram
     expect(result.diagnostics).toEqual([]);
     expect(result.value?.initialState).toBe("Idle");
     expect(result.value?.name).toBe("SimpleFlow");
+  });
+
+  it("maps Mermaid final transitions into the IR", () => {
+    const source = `
+stateDiagram-v2
+  [*] --> Login
+  Login -->|cancel| [*]
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "ExitFlow" });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.value?.states.Login.transitions).toEqual([
+      { event: "cancel", target: { kind: "final" } },
+    ]);
   });
 
   it("reports duplicate events through shared IR validation", () => {

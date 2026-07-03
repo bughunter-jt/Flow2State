@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { StateMachine } from "@/ir/state-machine";
+import { finalTarget, StateMachine, stateTarget } from "@/ir/state-machine";
 import { validateStateMachine } from "@/validation/validate-state-machine";
 
 describe("validateStateMachine", () => {
@@ -10,7 +10,7 @@ describe("validateStateMachine", () => {
       states: {
         Login: {
           name: "Login",
-          transitions: [{ event: "success", target: "Success" }],
+          transitions: [{ event: "success", target: stateTarget("Success") }],
         },
         Success: {
           name: "Success",
@@ -30,8 +30,8 @@ describe("validateStateMachine", () => {
         Login: {
           name: "LOGIN",
           transitions: [
-            { event: "success", target: "Success" },
-            { event: "success", target: "AlsoMissing" },
+            { event: "success", target: stateTarget("Success") },
+            { event: "success", target: stateTarget("AlsoMissing") },
           ],
         },
       },
@@ -65,5 +65,20 @@ describe("validateStateMachine", () => {
         severity: "error",
       },
     ]);
+  });
+
+  it("allows final transitions without requiring a backing state", () => {
+    const machine: StateMachine = {
+      name: "ExitFlow",
+      initialState: "Login",
+      states: {
+        Login: {
+          name: "Login",
+          transitions: [{ event: "cancel", target: finalTarget() }],
+        },
+      },
+    };
+
+    expect(validateStateMachine(machine)).toEqual([]);
   });
 });

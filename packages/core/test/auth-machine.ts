@@ -1,4 +1,4 @@
-import { StateMachine } from "../src/ir/state-machine";
+import { StateMachine, stateTarget } from "../src/ir/state-machine";
 
 export const authMachine: StateMachine = {
   name: "AuthFlow",
@@ -11,11 +11,11 @@ export const authMachine: StateMachine = {
       transitions: [
         {
           event: "success",
-          target: "MFA",
+          target: stateTarget("MFA"),
         },
         {
           event: "fail",
-          target: "Error",
+          target: stateTarget("Error"),
         },
       ],
     },
@@ -25,7 +25,7 @@ export const authMachine: StateMachine = {
       transitions: [
         {
           event: "verified",
-          target: "Success",
+          target: stateTarget("Success"),
           guard: "isMfaValid",
           action: "createSession",
         },

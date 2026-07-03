@@ -1,4 +1,10 @@
-import { StateMachine, StateNode, Transition } from "../../ir/state-machine";
+import {
+  finalTarget,
+  StateMachine,
+  StateNode,
+  stateTarget,
+  Transition,
+} from "../../ir/state-machine";
 import { parserRegistry } from "../ParserRegistry";
 import { Diagnostic } from "../diagnostic";
 import {
@@ -127,19 +133,20 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
       }
     }
 
-    for (const transition of ast.transitions) {
-      if (transition.to === INITIAL_MARKER) {
-        diagnostics.push({
-          code: "parser/unsupported-final-state",
-          message:
-            "Final-state transitions to [*] are not supported by the current IR.",
-          severity: "error",
-          location: { line: transition.line, column: 1 },
-        });
-        continue;
-      }
+    if (
+      initialTransitions.some((transition) => transition.to === INITIAL_MARKER)
+    ) {
+      diagnostics.push({
+        code: "parser/invalid-initial-target",
+        message: "The initial transition must target a concrete state.",
+        severity: "error",
+      });
+    }
 
-      ensureState(states, transition.to);
+    for (const transition of ast.transitions) {
+      if (transition.to !== INITIAL_MARKER) {
+        ensureState(states, transition.to);
+      }
 
       if (transition.from === INITIAL_MARKER) {
         continue;
@@ -212,7 +219,10 @@ function ensureState(
 function toTransition(transition: MermaidTransitionAstNode): Transition {
   return {
     event: transition.event ?? "__AUTO__",
-    target: transition.to,
+    target:
+      transition.to === INITIAL_MARKER
+        ? finalTarget()
+        : stateTarget(transition.to),
   };
 }
 

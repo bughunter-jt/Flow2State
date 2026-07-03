@@ -22,4 +22,20 @@ describe("TypeScriptGenerator", () => {
     const result = registry.generate("typescript", authMachine);
     expect(normalize(result)).toContain('initial: "Login"');
   });
+
+  it("renders final targets as null transitions", () => {
+    const generator = new TypeScriptGenerator();
+    const output = generator.generate({
+      name: "Checkout",
+      initialState: "Review",
+      states: {
+        Review: {
+          name: "Review",
+          transitions: [{ event: "confirm", target: { kind: "final" } }],
+        },
+      },
+    });
+
+    expect(normalize(output)).toContain("confirm: null");
+  });
 });

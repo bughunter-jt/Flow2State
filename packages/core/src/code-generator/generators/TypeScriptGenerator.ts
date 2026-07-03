@@ -1,6 +1,6 @@
 import { Generator } from "../generator.decorator";
 import { CodeGenerator, GenerateOptions } from "../code-generator";
-import { StateMachine } from "../../ir/state-machine";
+import { isFinalTarget, StateMachine } from "../../ir/state-machine";
 
 @Generator("typescript")
 export class TypeScriptGenerator implements CodeGenerator<string> {
@@ -10,7 +10,11 @@ export class TypeScriptGenerator implements CodeGenerator<string> {
     const states = Object.entries(machine.states)
       .map(([stateName, state]) => {
         const transitions = state.transitions
-          .map((t) => `        ${t.event}: "${t.target}"`)
+          .map((t) =>
+            isFinalTarget(t.target)
+              ? `        ${t.event}: null`
+              : `        ${t.event}: "${t.target.stateName}"`,
+          )
           .join(",\n");
 
         return `
