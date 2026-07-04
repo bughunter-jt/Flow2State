@@ -48,6 +48,31 @@ stateDiagram-v2
     });
   });
 
+  it("parses colon-style transition labels", () => {
+    const source = `
+stateDiagram-v2
+  [*] --> Login
+  Login --> MFA : success
+  Login --> Error : fail
+  MFA --> Success : verified
+`;
+
+    const parser = new MermaidStateDiagramParser();
+    const result = parser.parseToIR(source, { machineName: "AuthFlow" });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.value?.states.Login.transitions).toEqual([
+      { event: "success", target: { kind: "state", stateName: "MFA" } },
+      { event: "fail", target: { kind: "state", stateName: "Error" } },
+    ]);
+    expect(result.value?.states.MFA.transitions).toEqual([
+      {
+        event: "verified",
+        target: { kind: "state", stateName: "Success" },
+      },
+    ]);
+  });
+
   it("reports unsupported syntax with line information", () => {
     const source = `
 stateDiagram-v2
@@ -62,7 +87,7 @@ stateDiagram-v2
     expect(result.diagnostics).toContainEqual({
       code: "parser/unsupported-line",
       message:
-        "Only strict transition lines in the form A --> B or A -->|event| B are supported.",
+        "Only strict transition lines in the form A --> B, A -->|event| B, or A --> B : event are supported.",
       severity: "error",
       location: { line: 4, column: 1 },
     });

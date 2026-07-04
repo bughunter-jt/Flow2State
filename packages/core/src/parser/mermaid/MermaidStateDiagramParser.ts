@@ -133,7 +133,7 @@ export class MermaidStateDiagramParser implements SyntaxAdapter<MermaidStateDiag
         diagnostics.push({
           code: "parser/unsupported-line",
           message:
-            "Only strict transition lines in the form A --> B or A -->|event| B are supported.",
+            "Only strict transition lines in the form A --> B, A -->|event| B, or A --> B : event are supported.",
           severity: "error",
           location: { line: lineNumber, column: 1 },
         });
@@ -418,6 +418,17 @@ function parseTransitionLine(
 
     event = remainder.slice(1, eventEnd).trim();
     remainder = remainder.slice(eventEnd + 1).trim();
+  } else {
+    const colonIndex = remainder.indexOf(":");
+    if (colonIndex !== -1) {
+      const targetPart = remainder.slice(0, colonIndex).trim();
+      const eventPart = remainder.slice(colonIndex + 1).trim();
+
+      if (targetPart && eventPart) {
+        remainder = targetPart;
+        event = eventPart;
+      }
+    }
   }
 
   if (
