@@ -30,17 +30,13 @@ export function EditorPanel({ source, onSourceChange }: EditorPanelProps) {
           Author a compact Mermaid subset, then inspect the compiler output in
           real time.
         </p>
-        <div
-          className="flex flex-wrap justify-end gap-2 max-[720px]:justify-start"
+        <span
+          className="whitespace-nowrap text-xs font-medium tracking-[0.01em] text-stone-800 tabular-nums"
           aria-label="Editor stats"
         >
-          <span className="inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-full border border-stone-700/15 bg-white/80 px-3 py-1.5 text-xs font-medium tracking-[0.01em] text-stone-800">
-            {lineCount} lines
-          </span>
-          <span className="inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-full border border-stone-700/15 bg-white/80 px-3 py-1.5 text-xs font-medium tracking-[0.01em] text-stone-800">
-            {charCount} chars
-          </span>
-        </div>
+          {lineCount} lines{"\u2003"}
+          {charCount} chars
+        </span>
       </div>
       <div
         className="flex flex-wrap items-center gap-2"
