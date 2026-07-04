@@ -39,7 +39,7 @@ export function EditorPanel({ source, onSourceChange }: EditorPanelProps) {
         </span>
       </div>
       <div
-        className="flex flex-wrap items-center gap-2"
+        className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3"
         aria-label="Starter templates"
       >
         <span className="text-xs font-medium uppercase tracking-[0.08em] text-stone-700/75">
@@ -49,7 +49,7 @@ export function EditorPanel({ source, onSourceChange }: EditorPanelProps) {
           <button
             key={template.id}
             type="button"
-            className="cursor-pointer rounded-full border border-stone-700/15 bg-white/85 px-3 py-1.5 text-xs font-medium tracking-[0.01em] text-stone-800 transition hover:-translate-y-0.5 hover:border-amber-700/35 hover:bg-amber-50"
+            className="cursor-pointer rounded-full border border-stone-700/15 bg-white/85 px-3.5 py-2 text-xs font-medium tracking-[0.01em] text-stone-800 transition hover:-translate-y-0.5 hover:border-amber-700/35 hover:bg-amber-50"
             onClick={() => onSourceChange(template.source)}
           >
             {template.label}
