@@ -1,4 +1,4 @@
-import { initialSource } from "../lib/compiler";
+import { initialSource, sourceTemplates } from "../lib/compiler";
 import { WorkspacePanel } from "./WorkspacePanel";
 
 type EditorPanelProps = {
@@ -41,6 +41,24 @@ export function EditorPanel({ source, onSourceChange }: EditorPanelProps) {
             {charCount} chars
           </span>
         </div>
+      </div>
+      <div
+        className="flex flex-wrap items-center gap-2"
+        aria-label="Starter templates"
+      >
+        <span className="text-xs font-medium uppercase tracking-[0.08em] text-stone-700/75">
+          Templates
+        </span>
+        {sourceTemplates.map((template) => (
+          <button
+            key={template.id}
+            type="button"
+            className="cursor-pointer rounded-full border border-stone-700/15 bg-white/85 px-3 py-1.5 text-xs font-medium tracking-[0.01em] text-stone-800 transition hover:-translate-y-0.5 hover:border-amber-700/35 hover:bg-amber-50"
+            onClick={() => onSourceChange(template.source)}
+          >
+            {template.label}
+          </button>
+        ))}
       </div>
       <textarea
         className="box-border min-h-[620px] w-full resize-y rounded-[18px] border border-stone-700/10 bg-white/80 p-[18px] text-stone-900 outline-none shadow-inner transition-[border-color,box-shadow] duration-180 [font:0.96rem/1.65_var(--mono)] focus:border-amber-700 focus:shadow-[0_0_0_4px_rgba(188,108,37,0.12)] max-[980px]:min-h-[420px]"

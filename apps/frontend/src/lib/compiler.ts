@@ -17,6 +17,42 @@ export const initialSource = `stateDiagram-v2
   ManualReview -->|resolve| Complete
 `;
 
+export const SOURCE_STORAGE_KEY = "flow2state.source";
+
+export const sourceTemplates = [
+  {
+    id: "checkout",
+    label: "Checkout",
+    source: initialSource,
+  },
+  {
+    id: "approval",
+    label: "Approval",
+    source: `stateDiagram-v2
+  [*] --> Draft
+  Draft -->|submit| PendingReview
+  PendingReview -->|approve| Approved
+  PendingReview -->|reject| ChangesRequested
+  ChangesRequested -->|revise| Draft
+  Approved --> [*]
+`,
+  },
+  {
+    id: "retry",
+    label: "Retry Flow",
+    source: `stateDiagram-v2
+  [*] --> Idle
+  Idle -->|run| Processing
+  Processing -->|success| Done
+  Processing -->|fail| Retrying
+  Retrying -->|retry_ok| Processing
+  Retrying -->|give_up| Failed
+  Done --> [*]
+  Failed --> [*]
+`,
+  },
+] as const;
+
 export type MachineComputation = {
   diagnostics: Diagnostic[];
   machine: StateMachine | null;

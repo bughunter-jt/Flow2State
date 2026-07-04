@@ -3,12 +3,20 @@ import {
   compileSource,
   type MachineComputation,
   initialSource,
+  SOURCE_STORAGE_KEY,
 } from "../lib/compiler";
 
 const COMPILE_DEBOUNCE_MS = 150;
 
 export function useCompiler() {
-  const [source, setSource] = useState(initialSource);
+  const [source, setSource] = useState(() => {
+    try {
+      const savedSource = window.localStorage.getItem(SOURCE_STORAGE_KEY);
+      return savedSource ?? initialSource;
+    } catch {
+      return initialSource;
+    }
+  });
   const [result, setResult] = useState<MachineComputation>(() =>
     compileSource(initialSource),
   );
@@ -35,6 +43,14 @@ export function useCompiler() {
     return () => {
       window.clearTimeout(timer);
     };
+  }, [source]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SOURCE_STORAGE_KEY, source);
+    } catch {
+      // Ignore storage write errors (private mode, quota, etc.)
+    }
   }, [source]);
 
   return {
